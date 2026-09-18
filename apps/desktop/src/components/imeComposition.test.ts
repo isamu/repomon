@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SAFARI_IME_RACE_WINDOW_MS, __ime, isImeConfirmation } from "./imeComposition";
 
@@ -14,6 +14,18 @@ beforeEach(() => {
 describe("isImeConfirmation", () => {
   it("is false when nothing is being composed", () => {
     expect(isImeConfirmation(ev())).toBe(false);
+  });
+
+  it("is false in the page's first milliseconds, before anything has been composed", async () => {
+    // `performance.now()` counts from the page's time origin, so a module that starts its
+    // "last composition ended" at 0 is inside the window until the page is 30ms old. This has
+    // to read a FRESHLY LOADED module: beforeEach's reset would otherwise supply the value
+    // being tested, and the assertion would hold whatever the module was born with.
+    vi.resetModules();
+    const fresh = await import("./imeComposition");
+    fresh.__ime.setNow(() => 16);
+
+    expect(fresh.isImeConfirmation({ isComposing: false })).toBe(false);
   });
 
   it("is true while a composition is open, which is Chrome and Firefox", () => {

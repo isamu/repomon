@@ -21,7 +21,9 @@
 export const SAFARI_IME_RACE_WINDOW_MS = 30;
 
 let composing = false;
-let lastCompositionEndAt = 0;
+// Not 0: `performance.now()` counts from the page's time origin, so `now - 0` sits inside
+// the window for the page's first 30ms and would swallow an Enter no composition preceded.
+let lastCompositionEndAt = Number.NEGATIVE_INFINITY;
 
 /** Injectable for tests; `performance.now()` everywhere else. */
 let now: () => number = () => performance.now();
@@ -64,7 +66,7 @@ export const __ime = {
   },
   reset() {
     composing = false;
-    lastCompositionEndAt = 0;
+    lastCompositionEndAt = Number.NEGATIVE_INFINITY;
     now = () => performance.now();
   },
   start: onCompositionStart,
